@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
-from retina_daily_cog import build_hourly_cogs
+from retina_daily_cog import build_time_day_cogs
 from retina_daily_netcdf import build_time_day_netcdfs
 
 
@@ -392,17 +392,34 @@ def run(
     cog_summary: Optional[Dict[str, Any]] = None
 
     if build_daily_cog:
-        print("Construyendo COG horarios...")
-        cog_summary = build_hourly_cogs(
+        print("Construyendo COG diarios...")
+        cog_summary = build_time_day_cogs(
             dataset=dataset,
             species=species,
             out_root=out_root,
             require_hours=require_hours_per_day,
             delete_intermediate_ttf=delete_intermediate_ttf,
+            save_intermediate_netcdf=build_daily_netcdf,
         )
         manifest["cog_summary"] = cog_summary
+        if build_daily_netcdf:
+            netcdf_summary = {
+                "generated_at_utc": cog_summary["generated_at_utc"],
+                "dataset": dataset,
+                "species": species,
+                "dataset_species": dataset_species,
+                "output_dir": str(out_root / dataset_species / "time-days"),
+                "require_hours": require_hours_per_day,
+                "days_complete": cog_summary["days_complete"],
+                "days_incomplete": cog_summary["days_incomplete"],
+                "netcdfs_written": len(cog_summary.get("written_netcdf_files", [])),
+                "written_files": cog_summary.get("written_netcdf_files", []),
+                "complete_days": cog_summary["complete_days"],
+                "incomplete_days": cog_summary["incomplete_days"],
+            }
+            manifest["netcdf_summary"] = netcdf_summary
 
-    if build_daily_netcdf:
+    if build_daily_netcdf and not build_daily_cog:
         print("Construyendo NetCDF diarios...")
         netcdf_summary = build_time_day_netcdfs(
             dataset=dataset,

@@ -31,7 +31,7 @@ print({
     "delete_intermediate_ttf": DELETE_INTERMEDIATE_TTF,
 })
 
-# Ejecutar descarga y construir COG horarios
+# Ejecutar descarga y construir COG diarios multibanda
 result = run(
     dataset=DATASET,
     species=SPECIES,
@@ -47,7 +47,7 @@ result = run(
 
 print("Resultado descarga:", result.get("stats"))
 if result.get("cog_summary"):
-    print("COG horarios:", result["cog_summary"].get("written_files"))
+    print("COG diarios:", result["cog_summary"].get("written_files"))
     print("TTF eliminados:", result["cog_summary"].get("deleted_ttf_files"))
 if result.get("netcdf_summary"):
     print("NetCDF diarios:", result["netcdf_summary"].get("written_files"))
