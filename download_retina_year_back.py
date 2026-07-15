@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
+from retina_daily_cog import build_hourly_cogs
 from retina_daily_netcdf import build_time_day_netcdfs
 
 
@@ -228,7 +229,9 @@ def run(
     refresh_index_every: int,
     stop_after_missing: int = 2,
     start_hours_back: int = 24,
-    build_daily_netcdf: bool = True,
+    build_daily_netcdf: bool = False,
+    build_daily_cog: bool = True,
+    delete_intermediate_ttf: bool = True,
     require_hours_per_day: int = 24,
 ) -> Dict[str, Any]:
     dataset_species = f"{dataset}-{species}"
@@ -386,6 +389,19 @@ def run(
         print(f"Parada anticipada: {stop_reason}")
 
     netcdf_summary: Optional[Dict[str, Any]] = None
+    cog_summary: Optional[Dict[str, Any]] = None
+
+    if build_daily_cog:
+        print("Construyendo COG horarios...")
+        cog_summary = build_hourly_cogs(
+            dataset=dataset,
+            species=species,
+            out_root=out_root,
+            require_hours=require_hours_per_day,
+            delete_intermediate_ttf=delete_intermediate_ttf,
+        )
+        manifest["cog_summary"] = cog_summary
+
     if build_daily_netcdf:
         print("Construyendo NetCDF diarios...")
         netcdf_summary = build_time_day_netcdfs(
@@ -395,6 +411,8 @@ def run(
             require_hours=require_hours_per_day,
         )
         manifest["netcdf_summary"] = netcdf_summary
+
+    if cog_summary is not None or netcdf_summary is not None:
         save_json(out_dir / "manifest.json", manifest)
 
     result = {
@@ -402,6 +420,7 @@ def run(
         "manifest_path": str(out_dir / "manifest.json"),
         "requests_log_path": str(requests_log_path),
         "stats": manifest["stats"],
+        "cog_summary": cog_summary,
         "netcdf_summary": netcdf_summary,
     }
     return result
@@ -443,15 +462,25 @@ def parse_args() -> argparse.Namespace:
         help="Parar tras N peticiones consecutivas sin resultado (404). 0 desactiva la parada.",
     )
     parser.add_argument(
-        "--no-build-daily-netcdf",
+        "--build-daily-netcdf",
         action="store_true",
-        help="No construir NetCDF diarios al finalizar.",
+        help="Construir NetCDF diarios intermedios al finalizar.",
+    )
+    parser.add_argument(
+        "--no-build-daily-cog",
+        action="store_true",
+        help="No construir COG horarios al finalizar.",
+    )
+    parser.add_argument(
+        "--keep-intermediate-ttf",
+        action="store_true",
+        help="Conservar slices .ttf tras generar COG.",
     )
     parser.add_argument(
         "--require-hours-per-day",
         type=int,
         default=24,
-        help="Horas requeridas por dia para generar NetCDF (por defecto: 24).",
+        help="Horas requeridas por dia para marcar dia completo (por defecto: 24).",
     )
     return parser.parse_args()
 
@@ -466,6 +495,8 @@ if __name__ == "__main__":
         refresh_index_every=max(1, args.refresh_index_every),
         stop_after_missing=max(0, args.stop_after_missing),
         start_hours_back=max(0, args.start_hours_back),
-        build_daily_netcdf=not args.no_build_daily_netcdf,
+        build_daily_netcdf=args.build_daily_netcdf,
+        build_daily_cog=not args.no_build_daily_cog,
+        delete_intermediate_ttf=not args.keep_intermediate_ttf,
         require_hours_per_day=max(1, args.require_hours_per_day),
     )

@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+
+# Generated download artifacts (COGs in time-cogs/ are committed via workflow)
+data/**/time-slices/
+data/**/time-days/
+data/**/index.json
+data/**/manifest.json
+data/**/requests_log.jsonl
