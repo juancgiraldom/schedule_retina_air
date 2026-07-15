@@ -4,6 +4,8 @@ __pycache__/
 # Generated download artifacts (GeoTIFFs in time-tifs/ are committed via workflow)
 data/**/time-slices/
 data/**/time-days/
+data/**/time-cogs/
+*.aux.xml
 data/**/index.json
 data/**/manifest.json
 data/**/requests_log.jsonl
