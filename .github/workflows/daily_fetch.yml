@@ -29,10 +29,10 @@ jobs:
       - name: Run script
         run: python script.py
 
-      - name: Commit and push COGs
+      - name: Commit and push GeoTIFFs
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f data/*/time-cogs/
-          git diff --staged --quiet || git commit -m "Add RETINA COG data for $(date -u +'%Y-%m-%d')"
+          git add -f data/*/time-tifs/
+          git diff --staged --quiet || git commit -m "Add RETINA GeoTIFF data for $(date -u +'%Y-%m-%d')"
           git push

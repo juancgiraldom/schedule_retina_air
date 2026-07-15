@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Agrupa slices horarios RETINA en COG diarios multibanda (1 banda por hora)."""
+"""Agrupa slices horarios RETINA en GeoTIFF diarios multibanda (1 banda por hora)."""
 
 from __future__ import annotations
 
@@ -16,34 +16,37 @@ from retina_daily_netcdf import (
     load_index_meta,
 )
 
-COG_DRIVER_OPTIONS = [
+GEOTIFF_DRIVER_OPTIONS = [
     "COMPRESS=DEFLATE",
-    "BLOCKSIZE=512",
-    "OVERVIEWS=IGNORE_EXISTING",
+    "TILED=YES",
+    "BLOCKXSIZE=512",
+    "BLOCKYSIZE=512",
 ]
 
 
-def netcdf_to_cog(nc_path: Path, cog_path: Path) -> None:
-    cog_path.parent.mkdir(parents=True, exist_ok=True)
+def netcdf_to_geotiff(nc_path: Path, tif_path: Path) -> None:
+    tif_path.parent.mkdir(parents=True, exist_ok=True)
     cmd = [
         "gdal_translate",
         "-of",
-        "COG",
+        "GTiff",
         "-a_srs",
         "EPSG:4326",
         "-co",
-        COG_DRIVER_OPTIONS[0],
+        GEOTIFF_DRIVER_OPTIONS[0],
         "-co",
-        COG_DRIVER_OPTIONS[1],
+        GEOTIFF_DRIVER_OPTIONS[1],
         "-co",
-        COG_DRIVER_OPTIONS[2],
+        GEOTIFF_DRIVER_OPTIONS[2],
+        "-co",
+        GEOTIFF_DRIVER_OPTIONS[3],
         str(nc_path),
-        str(cog_path),
+        str(tif_path),
     ]
     subprocess.run(cmd, check=True, capture_output=True, text=True)
 
 
-def build_time_day_cogs(
+def build_time_day_tifs(
     dataset: str,
     species: str,
     out_root: Path,
@@ -56,7 +59,7 @@ def build_time_day_cogs(
     dataset_dir = out_root / dataset_species
     slices_dir = dataset_dir / "time-slices"
     index_path = dataset_dir / "index.json"
-    output_dir = dataset_dir / "time-cogs"
+    output_dir = dataset_dir / "time-tifs"
     netcdf_dir = dataset_dir / "time-days"
     output_dir.mkdir(parents=True, exist_ok=True)
     if save_intermediate_netcdf:
@@ -74,10 +77,10 @@ def build_time_day_cogs(
     failed_days: List[Dict[str, Any]] = []
 
     for day in sorted(by_day):
-        cog_path = output_dir / f"{day}.tif"
-        if cog_path.exists():
-            skipped_existing.append(str(cog_path))
-            print(f"COG ya existe, se omite: {cog_path}")
+        tif_path = output_dir / f"{day}.tif"
+        if tif_path.exists():
+            skipped_existing.append(str(tif_path))
+            print(f"GeoTIFF ya existe, se omite: {tif_path}")
             if delete_intermediate_ttf:
                 for hour, slice_path in sorted(by_day[day].items()):
                     if slice_path.exists():
@@ -112,15 +115,15 @@ def build_time_day_cogs(
                 nc_path = netcdf_dir / f"{day}.nc"
                 daily_ds.to_netcdf(nc_path, engine="netcdf4", format="NETCDF4")
                 written_netcdf_files.append(str(nc_path))
-                netcdf_to_cog(nc_path, cog_path)
+                netcdf_to_geotiff(nc_path, tif_path)
             else:
                 with tempfile.TemporaryDirectory() as tmpdir:
                     nc_path = Path(tmpdir) / f"{day}.nc"
                     daily_ds.to_netcdf(nc_path, engine="netcdf4", format="NETCDF4")
-                    netcdf_to_cog(nc_path, cog_path)
+                    netcdf_to_geotiff(nc_path, tif_path)
 
-            written_files.append(str(cog_path))
-            print(f"COG diario creado: {cog_path}")
+            written_files.append(str(tif_path))
+            print(f"GeoTIFF diario creado: {tif_path}")
 
             if delete_intermediate_ttf:
                 for hour in sorted(hour_files):
@@ -133,17 +136,19 @@ def build_time_day_cogs(
             failed_days.append(
                 {
                     "day": day,
-                    "cog_target": str(cog_path),
+                    "tif_target": str(tif_path),
                     "error": str(exc),
                 }
             )
-            print(f"Error creando COG diario {day}: {exc}")
+            print(f"Error creando GeoTIFF diario {day}: {exc}")
 
     summary = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "dataset": dataset,
         "species": species,
         "dataset_species": dataset_species,
+        "format": "GeoTIFF",
+        "compression": "DEFLATE",
         "slices_dir": str(slices_dir),
         "index_path": str(index_path),
         "output_dir": str(output_dir),
@@ -155,8 +160,8 @@ def build_time_day_cogs(
         "days_found": len(by_day),
         "days_complete": len(complete_days),
         "days_incomplete": len(incomplete_days),
-        "cogs_written": len(written_files),
-        "cogs_skipped_existing": len(skipped_existing),
+        "tifs_written": len(written_files),
+        "tifs_skipped_existing": len(skipped_existing),
         "ttf_deleted": len(deleted_ttf_files),
         "complete_days": complete_days,
         "incomplete_days": incomplete_days,
@@ -165,6 +170,9 @@ def build_time_day_cogs(
         "skipped_existing": skipped_existing,
         "deleted_ttf_files": deleted_ttf_files,
         "failed_days": failed_days,
+        # Backward-compatible aliases for existing manifest consumers
+        "cogs_written": len(written_files),
+        "cogs_skipped_existing": len(skipped_existing),
     }
 
     summary_path = output_dir / "build_summary.json"
@@ -173,7 +181,7 @@ def build_time_day_cogs(
         encoding="utf-8",
     )
     print(
-        f"Resumen COG diarios -> completos: {len(complete_days)}, "
+        f"Resumen GeoTIFF diarios -> completos: {len(complete_days)}, "
         f"incompletos: {len(incomplete_days)}, creados: {len(written_files)}, "
         f"omitidos (ya existian): {len(skipped_existing)}, "
         f"ttf eliminados: {len(deleted_ttf_files)}, fallos: {len(failed_days)}"

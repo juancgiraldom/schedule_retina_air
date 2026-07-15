@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
-from retina_daily_cog import build_time_day_cogs
+from retina_daily_tif import build_time_day_tifs
 from retina_daily_netcdf import build_time_day_netcdfs
 
 
@@ -392,8 +392,8 @@ def run(
     cog_summary: Optional[Dict[str, Any]] = None
 
     if build_daily_cog:
-        print("Construyendo COG diarios...")
-        cog_summary = build_time_day_cogs(
+        print("Construyendo GeoTIFF diarios (DEFLATE)...")
+        cog_summary = build_time_day_tifs(
             dataset=dataset,
             species=species,
             out_root=out_root,
@@ -486,12 +486,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--no-build-daily-cog",
         action="store_true",
-        help="No construir COG horarios al finalizar.",
+        help="No construir GeoTIFF diarios al finalizar.",
     )
     parser.add_argument(
         "--keep-intermediate-ttf",
         action="store_true",
-        help="Conservar slices .ttf tras generar COG.",
+        help="Conservar slices .ttf tras generar GeoTIFF.",
     )
     parser.add_argument(
         "--require-hours-per-day",

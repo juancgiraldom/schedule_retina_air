@@ -1,7 +1,7 @@
 __pycache__/
 *.pyc
 
-# Generated download artifacts (COGs in time-cogs/ are committed via workflow)
+# Generated download artifacts (GeoTIFFs in time-tifs/ are committed via workflow)
 data/**/time-slices/
 data/**/time-days/
 data/**/index.json
