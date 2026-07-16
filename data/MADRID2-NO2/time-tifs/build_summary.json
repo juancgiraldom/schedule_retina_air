@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-07-15T15:51:42.542475+00:00",
+  "generated_at_utc": "2026-07-16T07:58:20.923832+00:00",
   "dataset": "MADRID2",
   "species": "NO2",
   "dataset_species": "MADRID2-NO2",
@@ -14,14 +14,12 @@
   "save_intermediate_netcdf": false,
   "bands_per_day": 24,
   "days_found": 4,
-  "days_complete": 1,
+  "days_complete": 0,
   "days_incomplete": 2,
-  "tifs_written": 1,
-  "tifs_skipped_existing": 1,
+  "tifs_written": 0,
+  "tifs_skipped_existing": 2,
   "ttf_deleted": 48,
-  "complete_days": [
-    "2026-07-12"
-  ],
+  "complete_days": [],
   "incomplete_days": [
     {
       "day": "2026-07-10",
@@ -88,12 +86,11 @@
       "count": 13
     }
   ],
-  "written_files": [
-    "data/MADRID2-NO2/time-tifs/2026-07-12.tif"
-  ],
+  "written_files": [],
   "written_netcdf_files": [],
   "skipped_existing": [
-    "data/MADRID2-NO2/time-tifs/2026-07-11.tif"
+    "data/MADRID2-NO2/time-tifs/2026-07-11.tif",
+    "data/MADRID2-NO2/time-tifs/2026-07-12.tif"
   ],
   "deleted_ttf_files": [
     "data/MADRID2-NO2/time-slices/2026-07-11--00-00-00.ttf",
@@ -146,6 +143,6 @@
     "data/MADRID2-NO2/time-slices/2026-07-12--23-00-00.ttf"
   ],
   "failed_days": [],
-  "cogs_written": 1,
-  "cogs_skipped_existing": 1
+  "cogs_written": 0,
+  "cogs_skipped_existing": 2
 }
